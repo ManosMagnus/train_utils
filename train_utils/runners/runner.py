@@ -20,6 +20,7 @@ class Runner(ABC):
         train_dataloader: T.utils.data.DataLoader,
     ):
         running_loss, running_accuracy, total = 0.0, 0.0, 0.0
+        model.zero_grad()
 
         for inputs, target in train_dataloader:
 
