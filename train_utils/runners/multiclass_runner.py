@@ -5,9 +5,14 @@ DEVICE = T.device("cuda:0" if T.cuda.is_available() else "cpu")
 
 
 class MulticlassRunner(Runner):
-    def __init__(self, criterion=T.nn.NLLLoss, device=DEVICE):
-        super(MulticlassRunner, self).__init__(criterion=criterion(),
-                                               device=device)
+    def __init__(self,
+                 criterion=T.nn.NLLLoss,
+                 device=DEVICE,
+                 gradient_clipping=None):
+        super(MulticlassRunner,
+              self).__init__(criterion=criterion(),
+                             device=device,
+                             gradient_clipping=gradient_clipping)
 
     def predict(self, output):
         return T.argmax(output, dim=1)

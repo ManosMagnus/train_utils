@@ -9,21 +9,18 @@ DEVICE = T.device("cuda:0" if T.cuda.is_available() else "cpu")
 
 
 class Runner(ABC):
-    def __init__(self, criterion, device=DEVICE):
+    def __init__(self, criterion, device=DEVICE, gradient_clipping=None):
         self.device = device
         self.criterion = criterion
+        self.gradient_clipping = gradient_clipping
 
-    def run_epoch(
-        self,
-        model: T.nn.Module,
-        optimizer: T.optim.Optimizer,
-        train_dataloader: T.utils.data.DataLoader,
-    ):
+    def run_epoch(self, model: T.nn.Module, optimizer: T.optim.Optimizer,
+                  train_dataloader: T.utils.data.DataLoader):
         running_loss, running_accuracy, total = 0.0, 0.0, 0.0
-        model.zero_grad()
 
         for inputs, target in train_dataloader:
-
+            model.zero_grad()
+            optimizer.zero_grad()
             inputs = inputs.to(self.device)
             target = self.prep_target(target.to(self.device))
 
@@ -32,8 +29,11 @@ class Runner(ABC):
                 pred = self.predict(output)
                 loss = self.compute_cost(output, target)
 
-                optimizer.zero_grad()
                 loss.backward()
+
+                if self.gradient_clipping is not None:
+                    self.gradient_clipping(model.parameters())
+
                 optimizer.step()
 
             running_loss += loss.detach()
@@ -59,7 +59,10 @@ class Runner(ABC):
         for _ in range(num_epochs):
 
             running_loss, running_accuracy = self.run_epoch(
-                model, optimizer, train_dataloader)
+                model,
+                optimizer,
+                train_dataloader,
+            )
 
             if (verbose > 1):
                 print('\nTraining: Loss: {:.4f} Acc: {:.4f}'.format(
